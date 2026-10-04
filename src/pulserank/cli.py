@@ -15,6 +15,7 @@ def main(argv=None):
     run = commands.add_parser("serve", help="run the recommendation API and dashboard")
     run.add_argument("--port", type=int, default=8787)
     run.add_argument("--model", default="artifacts/model", help="trained model artifact directory")
+    run.add_argument("--registry", help="serve the registry's promoted champion")
     run.add_argument("--no-model", action="store_true", help="serve the heuristic model only")
     pipeline = commands.add_parser("pipeline", help="process accepted events into the local lakehouse")
     pipeline.add_argument("--lake", default="data/lake")
@@ -39,15 +40,41 @@ def main(argv=None):
     benchmark.add_argument("--model", default="artifacts/model")
     benchmark.add_argument("--requests", type=int, default=1000)
     benchmark.add_argument("--output", default="benchmarks/serving-latency.json")
+    ann_benchmark = commands.add_parser("benchmark-ann", help="measure HNSW recall and latency")
+    ann_benchmark.add_argument("--items", type=int, default=100_000)
+    ann_benchmark.add_argument("--queries", type=int, default=100)
+    ann_benchmark.add_argument("--dimensions", type=int, default=64)
+    ann_benchmark.add_argument("--neighbors", type=int, default=50)
+    ann_benchmark.add_argument("--output", default="benchmarks/ann-retrieval.json")
     analysis = commands.add_parser("analyze-experiment", help="compute CUPED-adjusted experiment outcomes")
     analysis.add_argument("--experiment", default="ranker-v1")
     analysis.add_argument("--window-days", type=float, default=7)
+    register = commands.add_parser("register-model", help="stage an artifact behind quality gates")
+    register.add_argument("--model", default="artifacts/model")
+    register.add_argument("--registry", default="artifacts/registry")
+    promote = commands.add_parser("promote-model", help="atomically promote a staged model")
+    promote.add_argument("--version", required=True)
+    promote.add_argument("--registry", default="artifacts/registry")
+    rollback = commands.add_parser("rollback-model", help="restore the previous champion")
+    rollback.add_argument("--registry", default="artifacts/registry")
+    registry_status = commands.add_parser("registry-status", help="show model registry state")
+    registry_status.add_argument("--registry", default="artifacts/registry")
+    drift = commands.add_parser("detect-drift", help="compare live traffic with training data")
+    drift.add_argument("--model", default="artifacts/model")
+    drift.add_argument("--warning-threshold", type=float, default=0.10)
     args = parser.parse_args(argv)
     store = Store(args.db)
     if args.command == "demo":
         print(json.dumps(seed(store), indent=2))
     elif args.command == "serve":
-        serve(store, port=args.port, model_path=None if args.no_model else args.model)
+        model_path = args.model
+        if args.registry:
+            from .registry import ModelRegistry
+            active = ModelRegistry(args.registry).active_path()
+            if active is None:
+                parser.error("the registry has no promoted model")
+            model_path = str(active)
+        serve(store, port=args.port, model_path=None if args.no_model else model_path)
     elif args.command == "ml-demo":
         from .ml.data import seed_ml_population
         print(json.dumps(seed_ml_population(store, users=args.users), indent=2))
@@ -61,9 +88,30 @@ def main(argv=None):
     elif args.command == "benchmark-serving":
         from .benchmark import benchmark_serving
         print(json.dumps(benchmark_serving(args.model, args.requests, args.output), indent=2, sort_keys=True))
+    elif args.command == "benchmark-ann":
+        from .benchmark import benchmark_ann
+        print(json.dumps(benchmark_ann(args.items, args.queries, args.dimensions,
+                                       args.neighbors, args.output), indent=2, sort_keys=True))
     elif args.command == "analyze-experiment":
         from .experimentation import analyze_experiment
         print(json.dumps(analyze_experiment(store, args.experiment, args.window_days), indent=2, sort_keys=True))
+    elif args.command in {"register-model", "promote-model", "rollback-model", "registry-status"}:
+        from .registry import ModelRegistry
+        registry = ModelRegistry(args.registry)
+        if args.command == "register-model":
+            result = registry.register(args.model)
+        elif args.command == "promote-model":
+            result = registry.promote(args.version)
+        elif args.command == "rollback-model":
+            result = registry.rollback()
+        else:
+            result = registry.status()
+        print(json.dumps(result, indent=2, sort_keys=True))
+    elif args.command == "detect-drift":
+        from .drift import detect_drift
+        from .ml.model import ModelBundle
+        print(json.dumps(detect_drift(store, ModelBundle.load(args.model), args.warning_threshold),
+                         indent=2, sort_keys=True))
     else:
         engine = EventTimePipeline(store, args.lake, args.watermark_minutes * 60)
         if args.command == "pipeline":

@@ -45,6 +45,12 @@ class Handler(BaseHTTPRequestHandler):
         elif parsed.path == "/api/model":
             model = self.model_runtime.status() if self.model_runtime else {"ready": False, "error": "no model configured"}
             self.json(model, 200 if model["ready"] else 503)
+        elif parsed.path == "/api/drift":
+            if not self.model_runtime or not self.model_runtime.bundle:
+                self.json({"status": "unavailable", "error": "no model configured"}, 503)
+            else:
+                from .drift import detect_drift
+                self.json(detect_drift(self.store, self.model_runtime.bundle))
         elif parsed.path == "/healthz":
             self.json({"status": "ok"})
         elif parsed.path == "/metrics":
