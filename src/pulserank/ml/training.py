@@ -141,10 +141,20 @@ def train(store, output="artifacts/model", dimensions=16, epochs=35, seed=17,
     features, labels = ranker_examples(dataset, retrieval, seed=seed + 1)
     ranker = RankerModel.fit(features, labels)
     calibration = calibrate_blend(dataset, retrieval, ranker)
-    digest = hashlib.sha256(
-        retrieval.user_embeddings.tobytes() + retrieval.item_embeddings.tobytes()
-        + ranker.weights.tobytes() + np.array([ranker.blend]).tobytes()
-    ).hexdigest()[:12]
+    version_hash = hashlib.sha256()
+    for array in (
+        retrieval.user_embeddings, retrieval.item_embeddings, retrieval.item_bias,
+        ranker.weights, np.array([ranker.bias]), ranker.mean, ranker.scale,
+        np.array([ranker.blend]), dataset.popularity, dataset.taste, dataset.genre_matrix,
+        np.array([item.quality for item in dataset.items]),
+        np.array([item.freshness for item in dataset.items]),
+    ):
+        version_hash.update(np.ascontiguousarray(array).tobytes())
+    version_hash.update(json.dumps({
+        "users": dataset.users, "items": [item.item_id for item in dataset.items],
+        "features": FEATURE_NAMES,
+    }, sort_keys=True, separators=(",", ":")).encode())
+    digest = version_hash.hexdigest()[:12]
     bundle = ModelBundle(
         retrieval, ranker, dataset.users, [item.item_id for item in dataset.items],
         FEATURE_NAMES, digest, dataset.popularity, dataset.taste, dataset.genre_matrix,

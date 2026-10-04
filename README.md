@@ -111,12 +111,22 @@ pulserank benchmark-serving --requests 1000
 pulserank analyze-experiment --experiment ranker-v1 --window-days 7
 ```
 
-On the recorded Apple Silicon development run, the full recommendation path—including SQLite reads, two-stage scoring, diversity reranking, and exposure writes—measured **11.8 ms p50**, **15.0 ms p95**, and **17.4 ms p99** across 1,000 sequential requests. See [the serving design](docs/serving.md) and [raw latency result](benchmarks/serving-latency.json).
+Stage and promote an immutable model through explicit quality gates, then serve the champion:
+
+```sh
+pulserank register-model --model artifacts/model
+pulserank promote-model --version MODEL_VERSION
+pulserank serve --registry artifacts/registry
+pulserank detect-drift --model artifacts/model
+pulserank rollback-model
+```
+
+On the recorded Apple Silicon development run, the full recommendation path—including SQLite reads, two-stage scoring, diversity reranking, and exposure writes—measured **13.5 ms p50**, **18.8 ms p95**, and **27.1 ms p99** across 1,000 sequential requests. See [the serving design](docs/serving.md) and [raw latency result](benchmarks/serving-latency.json).
 
 ## Roadmap
 
 1. **Streaming foundation — implemented:** Redpanda event log, Spark Structured Streaming/Delta boundary, medallion contracts, watermarks, late-event repair, and replay verification.
-2. **Production ML — in progress:** two-tower retrieval, learned ranker, temporal evaluation, MLflow tracking, serialization parity, versioned online serving, and safe fallback are implemented. Registry-driven promotion, large-catalog ANN retrieval, and drift detection remain.
+2. **Production ML — in progress:** two-tower retrieval, learned ranker, temporal evaluation, MLflow tracking, serialization parity, versioned online serving, quality-gated registry promotion, checksum validation, drift detection, and rollback are implemented. Large-catalog ANN retrieval remains.
 3. **Experimentation and reliability — in progress:** deterministic A/B routing, outcome attribution, CUPED estimates, a sequential harm guardrail, Prometheus metrics, and reproducible latency benchmarks are implemented. Shadow routing, failure injection, and automated rollback remain.
 
 See [the architecture notes](docs/architecture.md) for current correctness contracts and the distributed component mapping.

@@ -14,7 +14,9 @@ Control users remain on the heuristic baseline. A challenger falls back to that 
 
 ## Artifact contract
 
-The version-2 artifact contains user/item embeddings, item bias, ranker normalization and weights, the validation-selected ensemble weight, and immutable online feature state. Its version is a SHA-256 digest of learned weights and calibration. Loading validates the serving feature contract before the artifact becomes ready.
+The version-2 artifact contains user/item embeddings, item bias, ranker normalization and weights, the validation-selected ensemble weight, and immutable online feature state. Its version is a SHA-256 digest of every serving parameter, ordered user/item identities, and the feature schema. Loading validates the serving feature contract before the artifact becomes ready.
+
+The local registry copies artifacts into immutable version directories and records per-file SHA-256 checksums. Promotion requires NDCG lift, recall and coverage non-regression, and converged retrieval loss. Champion changes use an atomic metadata replacement; the prior champion remains available for immediate rollback. The server can resolve the active artifact with `--registry`.
 
 The current retrieval pass is exact NumPy scoring because the reference catalog contains 24 items. The boundary is deliberately isolated so an ANN index can replace it without changing ranking, experimentation, or exposure contracts.
 
@@ -27,6 +29,8 @@ The current retrieval pass is exact NumPy scoring because the reference catalog 
 - end-to-end recommendation latency histogram, sum, and count.
 
 The benchmark command builds an isolated deterministic workload, performs the complete request path, and writes raw results to `benchmarks/serving-latency.json`.
+
+`GET /api/drift` and `pulserank detect-drift` compare the live item-traffic distribution with the artifact's training distribution using Jensen-Shannon divergence. The report is tied to a model version and includes the live action mix and sample count.
 
 ## Experiment correctness
 

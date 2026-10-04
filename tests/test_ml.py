@@ -1,3 +1,5 @@
+import json
+import shutil
 import tempfile
 import unittest
 from pathlib import Path
@@ -7,8 +9,10 @@ import numpy as np
 from pulserank.ml.data import build_dataset, seed_ml_population
 from pulserank.ml.model import ModelBundle
 from pulserank.ml.training import feature_matrix, train
+from pulserank.drift import detect_drift
 from pulserank.experiments import assign
 from pulserank.recommender import recommend
+from pulserank.registry import ModelRegistry, PromotionError
 from pulserank.serving import ModelRuntime
 from pulserank.storage import Store
 
@@ -86,6 +90,40 @@ class MachineLearningTests(unittest.TestCase):
     def test_missing_artifact_reports_unready_instead_of_crashing(self):
         runtime = ModelRuntime.load(self.root / "does-not-exist")
         self.assertFalse(runtime.status()["ready"])
+
+    def test_registry_applies_quality_gates_and_promotes_atomically(self):
+        registry = ModelRegistry(self.root / "registry")
+        staged = registry.register(self.root / "model")
+        self.assertTrue(staged["gates"]["passed"])
+        status = registry.promote(self.report["model_version"])
+        self.assertEqual(status["active_version"], self.report["model_version"])
+        self.assertTrue(registry.active_path().is_dir())
+        second_report, _, _ = train(
+            self.store, self.root / "model-two", dimensions=8, epochs=16, seed=17, track=False
+        )
+        registry.register(self.root / "model-two")
+        registry.promote(second_report["model_version"])
+        rolled_back = registry.rollback()
+        self.assertEqual(rolled_back["active_version"], self.report["model_version"])
+
+    def test_registry_rejects_model_that_regresses_against_heuristic(self):
+        candidate = self.root / "regressed-model"
+        shutil.copytree(self.root / "model", candidate)
+        report_path = candidate / "evaluation.json"
+        report = json.loads(report_path.read_text())
+        report["metrics"]["learned_ranker"]["ndcg_at_5"] = 0.0
+        report_path.write_text(json.dumps(report))
+        registry = ModelRegistry(self.root / "rejected-registry")
+        staged = registry.register(candidate)
+        self.assertFalse(staged["gates"]["passed"])
+        with self.assertRaises(PromotionError):
+            registry.promote(self.report["model_version"])
+
+    def test_drift_report_is_versioned_and_uses_live_events(self):
+        report = detect_drift(self.store, self.bundle)
+        self.assertEqual(report["model_version"], self.report["model_version"])
+        self.assertGreater(report["observed_events"], 0)
+        self.assertGreaterEqual(report["item_distribution_js"], 0)
 
 
 if __name__ == "__main__":

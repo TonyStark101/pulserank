@@ -4,18 +4,18 @@
     "python": "3.11.17"
   },
   "latency_ms": {
-    "max": 36.043958,
-    "mean": 12.236068557,
-    "p50": 11.8065,
-    "p95": 14.952,
-    "p99": 17.424167
+    "max": 77.823834,
+    "mean": 14.282021853,
+    "p50": 13.492958,
+    "p95": 18.771417,
+    "p99": 27.096875
   },
-  "model_version": "bc08cd4aeae3",
+  "model_version": "04498095410f",
   "serving_modes": {
     "heuristic_control": 535,
     "learned_challenger": 465
   },
-  "throughput_requests_per_second": 81.72094336789768,
+  "throughput_requests_per_second": 70.00890624422235,
   "workload": {
     "catalog_items": 24,
     "requests": 1000,
