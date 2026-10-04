@@ -16,6 +16,13 @@ class ModelRuntime:
         self.load_error = load_error
         self._users = {value: index for index, value in enumerate(bundle.user_ids)} if bundle else {}
         self._items = {value: index for index, value in enumerate(bundle.item_ids)} if bundle else {}
+        self.ann = None
+        if bundle:
+            try:
+                from .ann import HNSWIndex
+                self.ann = HNSWIndex(bundle.retrieval)
+            except ImportError:
+                pass
 
     @classmethod
     def load(cls, directory):
@@ -38,6 +45,7 @@ class ModelRuntime:
             "ready": True, "model_version": self.bundle.version, "source": self.source,
             "users": len(self.bundle.user_ids), "items": len(self.bundle.item_ids),
             "embedding_dimensions": int(self.bundle.retrieval.user_embeddings.shape[1]),
+            "retrieval_engine": "hnsw" if self.ann else "exact_numpy",
         }
 
     def decision(self, store, user_id, variant, candidate_count=0):
@@ -63,6 +71,20 @@ class ModelRuntime:
         retrieval = self.bundle.retrieval.scores(uid)[indices]
         rank = self.bundle.ranker.scores(self.bundle.features(uid, indices))
         return retrieval, rank
+
+    def retrieve(self, user_id, allowed_item_ids, count):
+        uid = self._users[user_id]
+        allowed_indices = [self._items[item_id] for item_id in allowed_item_ids]
+        if self.ann:
+            indices = self.ann.query(uid, count, allowed_indices)
+        else:
+            all_scores = self.bundle.retrieval.scores(uid)
+            indices = np.asarray(sorted(
+                allowed_indices, key=lambda index: (-all_scores[index], self.bundle.item_ids[index])
+            )[:count], dtype=np.int64)
+        item_ids = [self.bundle.item_ids[int(index)] for index in indices]
+        scores = self.bundle.retrieval.scores(uid)[indices]
+        return item_ids, scores
 
     @staticmethod
     def serialize(decision):

@@ -38,6 +38,7 @@ The deterministic demo includes 24 fictional titles, four behavioral personas, a
 - **Versioned online model serving.** Challenger traffic uses the serialized two-tower and ranker artifact, while control traffic remains on the heuristic baseline. Unknown users, stale artifacts, and catalog mismatches fail safely to a traceable fallback.
 - **Experiment analysis.** Exposure-to-outcome attribution respects a fixed maturity window, applies CUPED variance reduction, and reports a conservative sequential harm guardrail.
 - **Operational telemetry.** A Prometheus-compatible endpoint exports request counts by serving mode, fallback reasons, and latency histograms. Model readiness is separately inspectable.
+- **ANN retrieval with graceful degradation.** An HNSW maximum-inner-product index serves two-tower candidates when the optional dependency is installed; the same boundary falls back to exact NumPy retrieval and is regression-tested against exact top-k recall.
 
 ## API
 
@@ -96,7 +97,7 @@ See [the streaming design](docs/streaming.md) for the event schema, watermark gu
 Requires the ML project extra, already included in the development environment:
 
 ```sh
-pip install -e ".[ml]"
+pip install -e ".[ml,ann]"
 pulserank ml-demo --users 240
 pulserank train --output artifacts/model --epochs 35
 ```
@@ -121,12 +122,14 @@ pulserank detect-drift --model artifacts/model
 pulserank rollback-model
 ```
 
-On the recorded Apple Silicon development run, the full recommendation path—including SQLite reads, two-stage scoring, diversity reranking, and exposure writes—measured **13.5 ms p50**, **18.8 ms p95**, and **27.1 ms p99** across 1,000 sequential requests. See [the serving design](docs/serving.md) and [raw latency result](benchmarks/serving-latency.json).
+On the recorded Apple Silicon development run, the full recommendation path—including SQLite reads, HNSW retrieval, learned scoring, diversity reranking, and exposure writes—measured **13.0 ms p50**, **17.1 ms p95**, and **21.4 ms p99** across 1,000 sequential requests. See [the serving design](docs/serving.md) and [raw latency result](benchmarks/serving-latency.json).
+
+The isolated HNSW workload reached **95.0% Recall@50** over **100,000 64-dimensional items**, with **0.45 ms/query** versus 0.75 ms for exact search on the same machine. See the [raw ANN benchmark](benchmarks/ann-retrieval.json); this synthetic microbenchmark is a retrieval check, not a production-scale throughput claim.
 
 ## Roadmap
 
 1. **Streaming foundation — implemented:** Redpanda event log, Spark Structured Streaming/Delta boundary, medallion contracts, watermarks, late-event repair, and replay verification.
-2. **Production ML — in progress:** two-tower retrieval, learned ranker, temporal evaluation, MLflow tracking, serialization parity, versioned online serving, quality-gated registry promotion, checksum validation, drift detection, and rollback are implemented. Large-catalog ANN retrieval remains.
+2. **Production ML — implemented reference path:** two-tower retrieval, HNSW ANN, learned ranking, temporal evaluation, MLflow tracking, serialization parity, versioned online serving, quality-gated registry promotion, checksum validation, drift detection, and rollback.
 3. **Experimentation and reliability — in progress:** deterministic A/B routing, outcome attribution, CUPED estimates, a sequential harm guardrail, Prometheus metrics, and reproducible latency benchmarks are implemented. Shadow routing, failure injection, and automated rollback remain.
 
 See [the architecture notes](docs/architecture.md) for current correctness contracts and the distributed component mapping.

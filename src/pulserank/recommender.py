@@ -22,14 +22,12 @@ def recommend(store, user_id: str, limit: int = 12, as_of: float = None,
     learned_scores = {}
     if serving and serving.mode == "learned_challenger":
         item_ids = [item.item_id for item in available]
-        retrieval_values, rank_values = model_runtime.scores(user_id, item_ids)
         candidate_limit = min(len(item_ids), max(20, limit * 4))
-        selected_indices = sorted(
-            range(len(item_ids)), key=lambda index: (-retrieval_values[index], item_ids[index])
-        )[:candidate_limit]
+        retrieved_ids, _ = model_runtime.retrieve(user_id, item_ids, candidate_limit)
+        retrieval_values, rank_values = model_runtime.scores(user_id, retrieved_ids)
         learned_scores = {
-            item_ids[index]: (float(retrieval_values[index]), float(rank_values[index]))
-            for index in selected_indices
+            item_id: (float(retrieval_values[index]), float(rank_values[index]))
+            for index, item_id in enumerate(retrieved_ids)
         }
         available = [item for item in available if item.item_id in learned_scores]
         serving = model_runtime.decision(store, user_id, assignment.variant, len(available))

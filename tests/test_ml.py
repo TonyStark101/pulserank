@@ -87,6 +87,15 @@ class MachineLearningTests(unittest.TestCase):
         self.assertEqual(serving.fallback_reason, "unknown user")
         self.assertEqual(len(recs), 5)
 
+    def test_ann_retrieval_matches_exact_top_candidates(self):
+        runtime = ModelRuntime.load(self.root / "model")
+        user = self.dataset.users[0]
+        item_ids = self.bundle.item_ids
+        retrieved, _ = runtime.retrieve(user, item_ids, 10)
+        exact_scores = self.bundle.retrieval.scores(0)
+        exact = sorted(range(len(item_ids)), key=lambda index: (-exact_scores[index], item_ids[index]))[:10]
+        self.assertEqual(set(retrieved), {item_ids[index] for index in exact})
+
     def test_missing_artifact_reports_unready_instead_of_crashing(self):
         runtime = ModelRuntime.load(self.root / "does-not-exist")
         self.assertFalse(runtime.status()["ready"])

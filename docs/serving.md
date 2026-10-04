@@ -18,7 +18,9 @@ The version-2 artifact contains user/item embeddings, item bias, ranker normaliz
 
 The local registry copies artifacts into immutable version directories and records per-file SHA-256 checksums. Promotion requires NDCG lift, recall and coverage non-regression, and converged retrieval loss. Champion changes use an atomic metadata replacement; the prior champion remains available for immediate rollback. The server can resolve the active artifact with `--registry`.
 
-The current retrieval pass is exact NumPy scoring because the reference catalog contains 24 items. The boundary is deliberately isolated so an ANN index can replace it without changing ranking, experimentation, or exposure contracts.
+The retrieval boundary uses an HNSW maximum-inner-product index when the optional `ann` dependency is installed. Item bias is represented as an additional vector dimension, preserving the complete two-tower retrieval score. Environments without HNSW degrade to exact NumPy scoring without changing ranking, experimentation, or exposure contracts. Recall parity against exact top-k is regression-tested on the reference workload.
+
+`pulserank benchmark-ann` separately measures ANN recall against exact inner-product search. The checked-in workload uses 100,000 deterministic 64-dimensional item vectors and records index parameters, build time, per-query latency, speedup, and Recall@50.
 
 ## Observability
 

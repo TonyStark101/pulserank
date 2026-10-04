@@ -23,6 +23,10 @@ ml = [
   "numpy==2.4.6; python_version >= '3.11'",
   "mlflow==3.16.1; python_version >= '3.11'",
 ]
+ann = [
+  "numpy==2.4.6; python_version >= '3.11'",
+  "hnswlib==0.8.0; python_version >= '3.11'",
+]
 
 [project.scripts]
 pulserank = "pulserank.cli:main"

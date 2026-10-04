@@ -1,0 +1,23 @@
+{
+  "ann_latency_ms_per_query": 0.4548550001345575,
+  "build_seconds": 24.380971417063847,
+  "environment": {
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "python": "3.11.17"
+  },
+  "exact_latency_ms_per_query": 0.7463112496770918,
+  "hnsw": {
+    "ef_construction": 200,
+    "ef_search": 300,
+    "m": 32
+  },
+  "recall_at_k": 0.9501999999999999,
+  "speedup": 1.6407673862138799,
+  "workload": {
+    "dimensions": 64,
+    "items": 100000,
+    "neighbors": 50,
+    "queries": 100,
+    "seed": 17
+  }
+}

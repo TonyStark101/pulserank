@@ -40,6 +40,12 @@ def main(argv=None):
     benchmark.add_argument("--model", default="artifacts/model")
     benchmark.add_argument("--requests", type=int, default=1000)
     benchmark.add_argument("--output", default="benchmarks/serving-latency.json")
+    ann_benchmark = commands.add_parser("benchmark-ann", help="measure HNSW recall and latency")
+    ann_benchmark.add_argument("--items", type=int, default=100_000)
+    ann_benchmark.add_argument("--queries", type=int, default=100)
+    ann_benchmark.add_argument("--dimensions", type=int, default=64)
+    ann_benchmark.add_argument("--neighbors", type=int, default=50)
+    ann_benchmark.add_argument("--output", default="benchmarks/ann-retrieval.json")
     analysis = commands.add_parser("analyze-experiment", help="compute CUPED-adjusted experiment outcomes")
     analysis.add_argument("--experiment", default="ranker-v1")
     analysis.add_argument("--window-days", type=float, default=7)
@@ -82,6 +88,10 @@ def main(argv=None):
     elif args.command == "benchmark-serving":
         from .benchmark import benchmark_serving
         print(json.dumps(benchmark_serving(args.model, args.requests, args.output), indent=2, sort_keys=True))
+    elif args.command == "benchmark-ann":
+        from .benchmark import benchmark_ann
+        print(json.dumps(benchmark_ann(args.items, args.queries, args.dimensions,
+                                       args.neighbors, args.output), indent=2, sort_keys=True))
     elif args.command == "analyze-experiment":
         from .experimentation import analyze_experiment
         print(json.dumps(analyze_experiment(store, args.experiment, args.window_days), indent=2, sort_keys=True))
