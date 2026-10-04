@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PulseRank — Live recommendation system</title>
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <nav>
+    <div class="brand"><span class="pulse"></span> PulseRank</div>
+    <div class="nav-meta"><span class="live">● LIVE</span><span id="clock"></span></div>
+  </nav>
+  <main>
+    <header class="hero">
+      <div>
+        <p class="eyebrow">REAL-TIME PERSONALIZATION</p>
+        <h1>Your feed is a<br><em>living system.</em></h1>
+        <p class="lede">Every interaction updates the ranking pipeline. Click a signal and watch the model respond.</p>
+      </div>
+      <div class="hero-controls">
+        <label>Viewer persona</label>
+        <div class="users" id="users"></div>
+        <div class="system-stat"><span>Serving target</span><strong>&lt; 50 ms</strong></div>
+      </div>
+    </header>
+
+    <section class="metrics" id="metrics"></section>
+
+    <section class="layout">
+      <div class="feed-panel">
+        <div class="section-head">
+          <div><p class="eyebrow">RANKED FOR <span id="viewer"></span></p><h2>Recommended now</h2></div>
+          <button id="refresh">↻ Re-rank</button>
+        </div>
+        <div class="feed" id="feed"><div class="loading">Computing candidates…</div></div>
+      </div>
+
+      <aside>
+        <div class="panel experiment">
+          <p class="eyebrow">EXPERIMENT ASSIGNMENT</p>
+          <div class="variant"><span id="variant">—</span><small id="bucket">—</small></div>
+          <div class="allocation"><span></span></div>
+          <p class="muted">Stable SHA-256 bucketing · 50/50 traffic split</p>
+          <div class="model-status">
+            <span>Serving path</span><strong id="serving-mode">—</strong>
+            <span>Model version</span><strong id="model-version">—</strong>
+          </div>
+        </div>
+        <div class="panel">
+          <p class="eyebrow">LIVE FEATURE VECTOR</p>
+          <div id="features" class="features"></div>
+        </div>
+        <div class="panel pipeline">
+          <p class="eyebrow">RANKING PIPELINE</p>
+          <div><b>1</b><span>Candidate retrieval<small id="retrieval-stage">Taste + popularity recall</small></span></div>
+          <i></i>
+          <div><b>2</b><span>Ranking<small id="ranking-stage">Quality + freshness</small></span></div>
+          <i></i>
+          <div><b>3</b><span>Constrained reranking<small>Diversity penalty</small></span></div>
+        </div>
+      </aside>
+    </section>
+  </main>
+  <div id="toast"></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>

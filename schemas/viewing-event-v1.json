@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://pulserank.dev/schemas/viewing-event-v1.json",
+  "title": "PulseRank viewing event v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "event_id", "user_id", "item_id", "action", "event_time", "watch_pct"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "event_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "user_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "item_id": {"type": "string", "minLength": 1, "maxLength": 128},
+    "action": {"enum": ["impression", "play", "complete", "like", "skip"]},
+    "event_time": {"type": "string", "format": "date-time"},
+    "watch_pct": {"type": "number", "minimum": 0, "maximum": 1},
+    "session_id": {"type": ["string", "null"], "maxLength": 128},
+    "trace_id": {"type": ["string", "null"], "maxLength": 128}
+  }
+}

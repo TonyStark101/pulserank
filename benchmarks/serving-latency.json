@@ -1,0 +1,24 @@
+{
+  "environment": {
+    "platform": "macOS-26.5.1-arm64-arm-64bit",
+    "python": "3.11.17"
+  },
+  "latency_ms": {
+    "max": 36.043958,
+    "mean": 12.236068557,
+    "p50": 11.8065,
+    "p95": 14.952,
+    "p99": 17.424167
+  },
+  "model_version": "bc08cd4aeae3",
+  "serving_modes": {
+    "heuristic_control": 535,
+    "learned_challenger": 465
+  },
+  "throughput_requests_per_second": 81.72094336789768,
+  "workload": {
+    "catalog_items": 24,
+    "requests": 1000,
+    "slate_size": 12
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "dataset": {
+    "catalog_items": 24,
+    "evaluation_users": 244,
+    "generator_seed": 73,
+    "test_interactions": 244,
+    "train_interactions": 3013,
+    "validation_interactions": 244
+  },
+  "evaluation": {
+    "method": "Per-user temporal leave-two-out split; ensemble weight selected on validation only; final metrics computed once on held-out test interactions.",
+    "synthetic_data": true,
+    "warning": "These results validate pipeline behavior on planted preference structure. They do not establish production recommendation quality."
+  },
+  "models": {
+    "heuristic": {
+      "coverage_at_5": 0.9583333333,
+      "diversity_at_5": 0.9150273224,
+      "mrr": 0.3274166749,
+      "ndcg_at_5": 0.3385428287,
+      "recall_at_5": 0.5491803279
+    },
+    "learned_ranker": {
+      "coverage_at_5": 1.0,
+      "diversity_at_5": 0.9107923497,
+      "mrr": 0.3504547820,
+      "ndcg_at_5": 0.3802080387,
+      "recall_at_5": 0.6229508197
+    },
+    "popularity": {
+      "coverage_at_5": 0.9583333333,
+      "diversity_at_5": 0.8586065574,
+      "mrr": 0.3168783666,
+      "ndcg_at_5": 0.3194613235,
+      "recall_at_5": 0.5081967213
+    },
+    "two_tower": {
+      "coverage_at_5": 1.0,
+      "diversity_at_5": 0.9142076503,
+      "mrr": 0.3035613749,
+      "ndcg_at_5": 0.3176741397,
+      "recall_at_5": 0.5409836066
+    }
+  },
+  "training": {
+    "dimensions": 16,
+    "epochs": 35,
+    "final_bpr_loss": 0.0510776246,
+    "initial_bpr_loss": 0.7016918178,
+    "ranker_examples": 4882,
+    "selected_learned_blend": 0.3
+  }
+}
